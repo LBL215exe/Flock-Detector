@@ -41,6 +41,3 @@ jobs:
       with:
         name: FlockDetector-Artifact
         path: FlockDetector.zip
-    ```
-
-Source: GitHub Actions CI/CD Pipeline Automation & iOS Build Workflows (2026).
