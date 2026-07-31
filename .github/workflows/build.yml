@@ -16,30 +16,40 @@ jobs:
       - name: Select Xcode version
         run: sudo xcode-select -s /Applications/Xcode.app
 
-      - name: Initialize Swift Package Build Wrapper
+      - name: Install XcodeGen if needed
         run: |
-          if [ ! -f "Package.swift" ]; then
-            printf '// swift-tools-version: 5.9\nimport PackageDescription\nlet package = Package(name: "FlockDetector", platforms: [.iOS(.v16)], products: [.library(name: "FlockDetector", targets: ["FlockDetector"])], targets: [.target(name: "FlockDetector", path: ".")])\n' > Package.swift
+          if ! command -v xcodegen &> /dev/null; then
+            brew install xcodegen
           fi
 
-      - name: Build and Package Unsigned App
+      - name: Generate and Build Project
         run: |
           set -e
-          mkdir -p build/Payload/FlockDetector.app
           
-          # Compile the package target for iOS simulator architecture
-          swift build -c release --triple arm64-apple-ios-simulator
-          
-          # Move binary into the .app container safely
-          if [ -f ".build/arm64-apple-ios/release/FlockDetector" ]; then
-            cp .build/arm64-apple-ios/release/FlockDetector build/Payload/FlockDetector.app/FlockDetector
-          elif [ -f ".build/release/FlockDetector" ]; then
-            cp .build/release/FlockDetector build/Payload/FlockDetector.app/FlockDetector
+          # Generate Xcode project from project.yml configuration
+          if [ -f "project.yml" ]; then
+            xcodegen generate
           fi
           
-          # Generate Info.plist manifest cleanly using printf
-          printf '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0">\n<dict>\n    <key>CFBundleIdentifier</key>\n    <string>com.lbl215.flockdetector</string>\n    <key>CFBundleName</key>\n    <string>FlockDetector</string>\n    <key>CFBundlePackageType</key>\n    <string>APPL</string>\n    <key>CFBundleShortVersionString</key>\n    <string>1.0</string>\n    <key>CFBundleVersion</key>\n    <string>1</string>\n    <key>LSRequiresIPhoneOS</key>\n    <true/>\n    <key>UILaunchScreen</key>\n    <dict/>\n</dict>\n</plist>\n' > build/Payload/FlockDetector.app/Info.plist
-
+          # Detect project filename and scheme dynamically
+          PROJECT_FILE=$(ls -d *.xcodeproj | head -n 1)
+          SCHEME_NAME=$(basename "$PROJECT_FILE" .xcodeproj)
+          
+          echo "Using project: $PROJECT_FILE with scheme: $SCHEME_NAME"
+          
+          # Build using xcodebuild for iOS Simulator with signing disabled
+          xcodebuild build \
+            -project "$PROJECT_FILE" \
+            -scheme "$SCHEME_NAME" \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CONFIGURATION_BUILD_DIR="$(pwd)/build/Products"
+            
+          # Package into the IPA payload structure
+          mkdir -p build/Payload
+          cp -R build/Products/*.app build/Payload/
           cd build
           zip -r -y "unsigned.ipa" Payload
           cd ..
