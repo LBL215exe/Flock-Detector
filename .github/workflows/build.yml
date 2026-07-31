@@ -1,8 +1,4 @@
-- name: Install XcodeGen
-      run: brew install xcodegen
-
-      - name: Generate Xcode Project
-            run: xcodegen generate
+name: Build Unsigned IPA
 
 on:
   workflow_dispatch:
@@ -14,8 +10,8 @@ jobs:
     runs-on: macos-14
 
     env:
-      SCHEME: "Flock-Detector"
-      PROJECT: "Flock-Detector.xcodeproj"
+      SCHEME: "BLEToolkit"
+      PROJECT: "BLEToolkit.xcodeproj"
 
     steps:
       - name: Checkout repo
@@ -45,4 +41,15 @@ jobs:
         run: |
           set -e
           APP_PATH=$(find build/App.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -n 1)
-          echo "Found a
+          echo "Found app: $APP_PATH"
+          mkdir -p build/Payload
+          cp -R "$APP_PATH" build/Payload/
+          cd build
+          zip -r -y "unsigned.ipa" Payload
+          cd ..
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-ipa
+          path: build/unsigned.ipa
