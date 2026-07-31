@@ -1,43 +1,44 @@
-name: Build Flock-Detector IPA
+name: Build Flock-Detector Unsigned IPA
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
 
 jobs:
-  build-ios:
-    runs-on: macos-latest
+  build:
+    runs-on: macos-14
+
+    env:
+      SCHEME: "Flock-Detector"
+      PROJECT: "Flock-Detector.xcodeproj"
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Set up Xcode
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: '26.0.1'
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode.app
 
-    - name: Compile and Archive
-      run: |
-        # Create output directories
-        mkdir -p Payload
-        
-        # Compile raw SwiftUI files into an executable bundle structure
-        swiftc -parse-as-library \
-          FlockDetectorApp.swift ContentView.swift \
-          -o Payload/FlockDetector \
-          -target arm64-apple-ios16.0-simulator \
-          -sdk $(xcrun --sdk iphonesimulator --show-sdk-path) \
-          -framework SwiftUI -framework CoreLocation -framework MapKit
-          
-        # Package the output into a downloadable archive
-        cd Payload
-        zip -r ../FlockDetector.zip FlockDetector
-        cd ..
-        echo "Build sequence finished successfully."
+      - name: Show available schemes (debug helper)
+        run: |
+          xcodebuild -list -project "$PROJECT" || true
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: FlockDetector-Artifact
-        path: FlockDetector.zip
+      - name: Build unsigned archive
+        run: |
+          xcodebuild archive \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -archivePath build/App.xcarchive \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+      - name: Package unsigned IPA
+        run: |
+          set -e
+          APP_PATH=$(find build/App.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -n 1)
+          echo "Found a
