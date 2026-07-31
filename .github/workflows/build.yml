@@ -39,14 +39,16 @@ jobs:
           
           echo "Using project: $PROJECT_FILE with scheme: $SCHEME_NAME"
           
-          # Build using xcodebuild for iOS Simulator with signing disabled
+          # Build using xcodebuild for generic iOS device architecture with signing disabled
           xcodebuild build \
             -project "$PROJECT_FILE" \
             -scheme "$SCHEME_NAME" \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
             CONFIGURATION_BUILD_DIR="$(pwd)/build/Products"
             
           # Package into the IPA payload structure
