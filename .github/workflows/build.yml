@@ -39,33 +39,17 @@ jobs:
           
           echo "Using project: $PROJECT_FILE with scheme: $SCHEME_NAME"
           
-          # Create a custom entitlements file to ensure clean on-device signing compatibility
-          cat << 'EOF' > entitlements.plist
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          dict>
-              <key>keychain-access-groups</key>
-              <array>
-                  <string>$(AppIdentifierPrefix)com.lbl215.flockdetector</string>
-              </array>
-              <key>get-task-allow</key>
-              <true/>
-          </dict>
-          </plist>
-          EOF
-          
-          # Build using xcodebuild for generic iOS device architecture with proper packaging flags
+          # Build using xcodebuild with team requirement bypass properties
           xcodebuild build \
             -project "$PROJECT_FILE" \
             -scheme "$SCHEME_NAME" \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
-            CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="Apple Development" \
-            EXPANDED_CODE_SIGN_IDENTITY="" \
-            PROVISIONING_PROFILE_SPECIFIER="" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            DEVELOPMENT_TEAM="" \
             CONFIGURATION_BUILD_DIR="$(pwd)/build/Products"
             
           # Package into the IPA payload structure
