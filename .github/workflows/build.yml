@@ -39,35 +39,25 @@ jobs:
           
           echo "Using project: $PROJECT_FILE with scheme: $SCHEME_NAME"
           
-          # Create a custom entitlements file to ensure clean on-device signing compatibility
-          cat << 'EOF' > entitlements.plist
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          dict>
-              <key>keychain-access-groups</key>
-              <array>
-                  <string>$(AppIdentifierPrefix)com.lbl215.flockdetector</string>
-              </array>
-              <key>get-task-allow</key>
-              <true/>
-          </dict>
-          </plist>
-          EOF
-          
-          # Build using xcodebuild for generic iOS device architecture with proper packaging flags
+          # Build using xcodebuild cleanly with code signing completely disabled
           xcodebuild build \
             -project "$PROJECT_FILE" \
             -scheme "$SCHEME_NAME" \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
-            CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="Apple Development" \
-            EXPANDED_CODE_SIGN_IDENTITY="" \
-            PROVISIONING_PROFILE_SPECIFIER="" \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
             CONFIGURATION_BUILD_DIR="$(pwd)/build/Products"
             
+          # Ensure bundle format integrity for external signers
+          APP_DIR=$(ls -d build/Products/*.app | head -n 1)
+          if [ -d "$APP_DIR" ]; then
+            # Remove any residual broken signature folders if present
+            rm -rf "$APP_DIR/_CodeSignature"
+          fi
+          
           # Package into the IPA payload structure
           mkdir -p build/Payload
           cp -R build/Products/*.app build/Payload/
