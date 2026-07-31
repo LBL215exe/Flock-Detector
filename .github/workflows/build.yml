@@ -1,5 +1,4 @@
 name: Build Flock-Detector Unsigned IPA
-
 - name: Install XcodeGen
       run: brew install xcodegen
 
