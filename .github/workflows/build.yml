@@ -15,7 +15,7 @@ jobs:
     - name: Set up Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: '15.0'
+        xcode-version: '26.0.1'
 
     - name: Compile and Archive
       run: |
