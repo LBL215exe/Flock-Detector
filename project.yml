@@ -1,0 +1,10 @@
+name: Flock-Detector
+targets:
+  Flock-Detector:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources: [ . ]
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.lbl215.flockdetector
+      INFOPLIST_FILE: Info.plist
