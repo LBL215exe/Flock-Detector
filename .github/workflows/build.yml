@@ -1,5 +1,11 @@
 name: Build Flock-Detector Unsigned IPA
 
+-name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
 on:
   workflow_dispatch:
   push:
